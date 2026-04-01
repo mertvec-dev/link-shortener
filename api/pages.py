@@ -24,8 +24,7 @@ def get_auth_status(request: Request) -> bool:
 @router.get("/", response_class=HTMLResponse)
 async def home_page(request: Request):
     is_auth = get_auth_status(request)
-    return templates.TemplateResponse("home.html", {
-        "request": request,
+    return templates.TemplateResponse(request=request, name="home.html", context={
         "is_authenticated": is_auth
     })
 
@@ -34,8 +33,7 @@ async def home_page(request: Request):
 @router.get("/register", response_class=HTMLResponse)
 async def register_page(request: Request):
     is_auth = get_auth_status(request)
-    return templates.TemplateResponse("register.html", {
-        "request": request,
+    return templates.TemplateResponse(request=request, name="register.html", context={
         "is_authenticated": is_auth
     })
 
@@ -44,8 +42,7 @@ async def register_page(request: Request):
 @router.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
     is_auth = get_auth_status(request)
-    return templates.TemplateResponse("login.html", {
-        "request": request,
+    return templates.TemplateResponse(request=request, name="login.html", context={
         "is_authenticated": is_auth
     })
 
@@ -54,8 +51,7 @@ async def login_page(request: Request):
 @router.get("/shorten", response_class=HTMLResponse)
 async def shorten_page(request: Request):
     is_auth = get_auth_status(request)
-    return templates.TemplateResponse("shorten.html", {
-        "request": request,
+    return templates.TemplateResponse(request=request, name="shorten.html", context={
         "is_authenticated": is_auth
     })
 
@@ -64,8 +60,7 @@ async def shorten_page(request: Request):
 @router.get("/my-links", response_class=HTMLResponse)
 async def my_links_page(request: Request):
     is_auth = get_auth_status(request)
-    return templates.TemplateResponse("my-links.html", {
-        "request": request,
+    return templates.TemplateResponse(request=request, name="my-links.html", context={
         "is_authenticated": is_auth
     })
 
@@ -74,8 +69,7 @@ async def my_links_page(request: Request):
 @router.get("/click-stats/{link_id}/{short_code}", response_class=HTMLResponse)
 async def click_stats_page(request: Request, link_id: int, short_code: str):
     is_auth = get_auth_status(request)
-    return templates.TemplateResponse("click-stats.html", {
-        "request": request,
+    return templates.TemplateResponse(request=request, name="click-stats.html", context={
         "is_authenticated": is_auth,
         "link_id": link_id,
         "short_code": short_code
@@ -85,7 +79,6 @@ async def click_stats_page(request: Request, link_id: int, short_code: str):
 # Страница выхода
 @router.get("/logout", response_class=HTMLResponse)
 async def logout_page(request: Request):
-    return templates.TemplateResponse("logout.html", {
-        "request": request,
+    return templates.TemplateResponse(request=request, name="logout.html", context={
         "is_authenticated": False
     })
