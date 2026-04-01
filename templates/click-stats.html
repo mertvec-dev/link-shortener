@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+
+{% block title %}Статистика кликов | Link Shortener{% endblock %}
+
+{% block content %}
+<h1>📊 Статистика кликов</h1>
+<p style="color: #666; margin-bottom: 20px;">Все переходы по ссылке <strong id="linkCode"></strong></p>
+
+<p class="error" id="error" style="display: none;"></p>
+
+<div id="loading" style="text-align: center; padding: 40px;">
+    <p>⏳ Загрузка...</p>
+</div>
+
+<div id="noClicks" style="text-align: center; padding: 40px; display: none;">
+    <p style="font-size: 48px;">📭</p>
+    <p style="color: #666;">Пока нет кликов по этой ссылке</p>
+</div>
+
+<div id="clicksList" style="display: none;"></div>
+
+<p style="margin-top: 30px; text-align: center;">
+    <a href="/my-links" class="btn">← Назад к ссылкам</a>
+</p>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .click-item {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        background: white;
+        overflow: hidden;
+    }
+    .click-header {
+        padding: 15px 20px;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #f8f9fa;
+        transition: background 0.3s;
+    }
+    .click-header:hover {
+        background: #e9ecef;
+    }
+    .click-header.expanded {
+        background: #667eea;
+        color: white;
+    }
+    .click-details {
+        display: none;
+        padding: 20px;
+        border-top: 1px solid #ddd;
+    }
+    .click-details.show {
+        display: block;
+    }
+    .detail-row {
+        display: flex;
+        padding: 8px 0;
+        border-bottom: 1px solid #eee;
+    }
+    .detail-row:last-child {
+        border-bottom: none;
+    }
+    .detail-label {
+        font-weight: bold;
+        width: 120px;
+        color: #555;
+    }
+    .detail-value {
+        color: #333;
+        font-family: monospace;
+    }
+    .click-icon {
+        font-size: 20px;
+        transition: transform 0.3s;
+    }
+    .click-icon.rotated {
+        transform: rotate(180deg);
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Получаем ID ссылки и код из URL
+const pathParts = window.location.pathname.split('/');
+const linkId = pathParts[pathParts.length - 2];
+const linkCode = pathParts[pathParts.length - 3];
+
+document.getElementById('linkCode').textContent = '/' + linkCode;
+
+const token = localStorage.getItem('access_token');
+
+function toggleDetails(header) {
+    const details = header.nextElementSibling;
+    const icon = header.querySelector('.click-icon');
+    
+    details.classList.toggle('show');
+    header.classList.toggle('expanded');
+    icon.classList.toggle('rotated');
+}
+
+async function loadClicks() {
+    const errorEl = document.getElementById('error');
+    const loadingEl = document.getElementById('loading');
+    const noClicksEl = document.getElementById('noClicks');
+    const clicksListEl = document.getElementById('clicksList');
+
+    try {
+        const response = await fetch('/links/' + linkId + '/clicks', {
+            headers: {'Authorization': 'Bearer ' + token}
+        });
+
+        if (response.status === 401) {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            window.location.href = '/login';
+            return;
+        }
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            errorEl.textContent = 'Ошибка: ' + (errorData.detail || 'Неизвестная ошибка');
+            errorEl.style.display = 'block';
+            loadingEl.style.display = 'none';
+            return;
+        }
+
+        const data = await response.json();
+        loadingEl.style.display = 'none';
+
+        if (data.clicks.length === 0) {
+            noClicksEl.style.display = 'block';
+            return;
+        }
+
+        clicksListEl.style.display = 'block';
+        clicksListEl.innerHTML = '';
+
+        data.clicks.forEach((click, index) => {
+            const clickDiv = document.createElement('div');
+            clickDiv.className = 'click-item';
+            
+            const date = new Date(click.created_at).toLocaleString('ru-RU');
+            const browserIcon = getBrowserIcon(click.browser);
+            const deviceIcon = getDeviceIcon(click.device);
+            
+            clickDiv.innerHTML = `
+                <div class="click-header" onclick="toggleDetails(this)">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <span style="font-size: 24px;">${browserIcon}</span>
+                        <div>
+                            <div style="font-weight: bold;">${click.browser} • ${click.device}</div>
+                            <div style="font-size: 14px; color: #666;">${date}</div>
+                        </div>
+                    </div>
+                    <span class="click-icon">▼</span>
+                </div>
+                <div class="click-details">
+                    <div class="detail-row">
+                        <span class="detail-label">🌐 IP адрес:</span>
+                        <span class="detail-value">${click.ip}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">🖥️ Браузер:</span>
+                        <span class="detail-value">${click.browser}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">📱 Устройство:</span>
+                        <span class="detail-value">${click.device}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">⏰ Дата:</span>
+                        <span class="detail-value">${date}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">📋 User-Agent:</span>
+                        <span class="detail-value" style="word-break: break-all;">${click.user_agent || 'Неизвестно'}</span>
+                    </div>
+                </div>
+            `;
+            
+            clicksListEl.appendChild(clickDiv);
+        });
+    } catch (err) {
+        console.error('Error loading clicks:', err);
+        errorEl.textContent = 'Ошибка соединения: ' + err.message;
+        errorEl.style.display = 'block';
+        loadingEl.style.display = 'none';
+    }
+}
+
+function getBrowserIcon(browser) {
+    if (browser.includes('Chrome')) return '🌐';
+    if (browser.includes('Firefox')) return '🦊';
+    if (browser.includes('Safari')) return '🧭';
+    if (browser.includes('Edge')) return '🔷';
+    if (browser.includes('Opera')) return '🔴';
+    if (browser.includes('Internet Explorer')) return '📺';
+    return '🌐';
+}
+
+function getDeviceIcon(device) {
+    if (device.includes('Мобильное')) return '📱';
+    if (device.includes('Планшет')) return '📟';
+    if (device.includes('Десктоп')) return '💻';
+    return '💻';
+}
+
+loadClicks();
+</script>
+{% endblock %}

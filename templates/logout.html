@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Выход | Link Shortener{% endblock %}
+
+{% block content %}
+<div style="text-align: center; padding: 40px;">
+    <h1>🚪 Выход</h1>
+    <p style="font-size: 18px; color: #666; margin: 20px 0;">Выход из системы...</p>
+    <p style="font-size: 48px;">👋</p>
+</div>
+
+<script>
+    // Отправляем запрос на сервер для выхода
+    fetch('/auth/logout', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => {
+        // Очищаем токены в localStorage
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        
+        // Перенаправляем на главную
+        setTimeout(() => {
+            window.location.href = '/';
+        }, 1000);
+    })
+    .catch(error => {
+        console.error('Ошибка выхода:', error);
+        // Даже при ошибке очищаем токены
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        setTimeout(() => {
+            window.location.href = '/';
+        }, 1000);
+    });
+</script>
+{% endblock %}

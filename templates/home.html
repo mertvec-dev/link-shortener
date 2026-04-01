@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Главная | Link Shortener{% endblock %}
+
+{% block content %}
+<h1>🔗 Link Shortener</h1>
+<p style="font-size: 18px; color: #666; margin-bottom: 30px;">
+    Сервис для сокращения ссылок с JWT аутентификацией и статистикой
+</p>
+
+<h2>✨ Возможности:</h2>
+<ul style="margin: 20px 0 20px 30px; line-height: 2;">
+    <li>✂️ Сокращение длинных ссылок</li>
+    <li>📊 Статистика переходов</li>
+    <li>🔐 JWT аутентификация (Access + Refresh)</li>
+    <li>🗄️ PostgreSQL + Docker</li>
+    <li>📱 Адаптивный дизайн</li>
+</ul>
+
+<h2>🚀 Начать работу:</h2>
+<div style="margin: 20px 0; display: flex; gap: 15px; flex-wrap: wrap;">
+    <a href="/register" class="btn btn-success">📝 Регистрация</a>
+    <a href="/login" class="btn">🔑 Вход</a>
+    <a href="/docs" class="btn" style="background: #6c757d;">📚 API Документация</a>
+</div>
+
+<h2>🛠️ Технологии:</h2>
+<table style="margin: 20px 0;">
+    <tr>
+        <th>Компонент</th>
+        <th>Технология</th>
+    </tr>
+    <tr>
+        <td>Backend</td>
+        <td>FastAPI + Python</td>
+    </tr>
+    <tr>
+        <td>ORM</td>
+        <td>SQLModel</td>
+    </tr>
+    <tr>
+        <td>База данных</td>
+        <td>PostgreSQL 15</td>
+    </tr>
+    <tr>
+        <td>Контейнеризация</td>
+        <td>Docker + Docker Compose</td>
+    </tr>
+    <tr>
+        <td>Аутентификация</td>
+        <td>JWT (Access + Refresh)</td>
+    </tr>
+</table>
+{% endblock %}

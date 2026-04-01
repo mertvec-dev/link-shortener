@@ -1,0 +1,19 @@
+# FastAPI и сервер
+fastapi>=0.100.0
+uvicorn>=0.23.0
+jinja2>=3.1.0
+
+# База данных
+sqlmodel>=0.0.37
+psycopg2-binary>=2.9.0
+
+# Безопасность
+passlib>=1.7.4
+bcrypt==4.0.1
+python-jose>=3.3.0
+
+# Переменные окружения
+python-dotenv>=1.0.0
+
+# Валидация email (для Pydantic EmailStr)
+email-validator>=2.0.0

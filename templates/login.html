@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}Вход | Link Shortener{% endblock %}
+
+{% block content %}
+<h1>🔑 Вход</h1>
+<p style="color: #666; margin-bottom: 20px;">Войдите в свой аккаунт</p>
+
+<form id="loginForm">
+    <label for="username">Имя пользователя:</label>
+    <input type="text" id="username" placeholder="Введите имя" required>
+    
+    <label for="password">Пароль:</label>
+    <input type="password" id="password" placeholder="Введите пароль" required>
+    
+    <button type="submit" class="btn" style="width: 100%; margin-top: 20px;">Войти</button>
+</form>
+
+<p class="error" id="error" style="display: none;"></p>
+
+<p style="margin-top: 20px; text-align: center;">
+    Нет аккаунта? <a href="/register">Зарегистрироваться</a>
+</p>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    
+    const errorEl = document.getElementById('error');
+    
+    try {
+        const response = await fetch('/auth/login', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({username, password})
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            localStorage.setItem('access_token', data.access_token);
+            localStorage.setItem('refresh_token', data.refresh_token);
+            window.location.href = '/shorten';
+        } else {
+            errorEl.textContent = data.detail || 'Неверное имя или пароль';
+            errorEl.style.display = 'block';
+        }
+    } catch (err) {
+        errorEl.textContent = 'Ошибка соединения с сервером';
+        errorEl.style.display = 'block';
+    }
+});
+</script>
+{% endblock %}

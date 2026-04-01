@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Мои ссылки | Link Shortener{% endblock %}
+
+{% block content %}
+<h1>📊 Мои ссылки</h1>
+<p style="color: #666; margin-bottom: 20px;">Все ваши сокращённые ссылки и статистика</p>
+
+<p class="error" id="error" style="display: none;"></p>
+
+<div id="loading" style="text-align: center; padding: 40px;">
+    <p>⏳ Загрузка...</p>
+</div>
+
+<table id="linksTable" style="display: none;">
+    <thead>
+        <tr>
+            <th>Короткий код</th>
+            <th>Оригинал</th>
+            <th>Клики</th>
+            <th>Создана</th>
+            <th>Действия</th>
+        </tr>
+    </thead>
+    <tbody id="linksBody"></tbody>
+</table>
+
+<div id="noLinks" style="text-align: center; padding: 40px; display: none;">
+    <p style="font-size: 48px;">📭</p>
+    <p style="color: #666;">У вас пока нет ссылок</p>
+    <a href="/shorten" class="btn" style="margin-top: 20px;">Создать первую ссылку</a>
+</div>
+
+<p style="margin-top: 30px; text-align: center;">
+    <a href="/shorten" class="btn btn-success">➕ Создать ссылку</a>
+</p>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Проверка авторизации
+const token = localStorage.getItem('access_token');
+console.log('Token:', token); // ОТЛАДКА
+
+if (!token) {
+    console.log('No token, redirect to login');
+    window.location.href = '/login';
+}
+
+async function loadLinks() {
+    const errorEl = document.getElementById('error');
+    const loadingEl = document.getElementById('loading');
+    const tableEl = document.getElementById('linksTable');
+    const noLinksEl = document.getElementById('noLinks');
+    
+    try {
+        console.log('Fetching /links/my with token:', token ? token.substring(0, 20) + '...' : 'none');
+        
+        const response = await fetch('/links/my', {
+            headers: {'Authorization': 'Bearer ' + token}
+        });
+        
+        console.log('Response status:', response.status);
+        
+        if (response.status === 401) {
+            console.log('401 Unauthorized, redirect to login');
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            window.location.href = '/login';
+            return;
+        }
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.log('Error response:', errorData);
+            errorEl.textContent = 'Ошибка: ' + (errorData.detail || 'Неизвестная ошибка');
+            errorEl.style.display = 'block';
+            loadingEl.style.display = 'none';
+            return;
+        }
+        
+        const data = await response.json();
+        console.log('Received data:', data);
+        
+        loadingEl.style.display = 'none';
+        
+        if (data.links.length === 0) {
+            console.log('No links, showing empty state');
+            noLinksEl.style.display = 'block';
+            return;
+        }
+        
+        console.log('Rendering', data.links.length, 'links');
+        tableEl.style.display = 'table';
+        const tbody = document.getElementById('linksBody');
+        tbody.innerHTML = '';
+        
+        data.links.forEach(link => {
+            const row = tbody.insertRow();
+            const shortUrl = '/links/' + link.short_code;
+            const statsUrl = '/click-stats/' + link.id + '/' + link.short_code;
+            row.innerHTML = `
+                <td><a href="${shortUrl}" target="_blank" style="color: #667eea; font-weight: bold;">${link.short_code}</a></td>
+                <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${link.original_url}">${link.original_url}</td>
+                <td style="font-weight: bold;">${link.clicks} 👁</td>
+                <td style="color: #888;">${new Date(link.created_at).toLocaleDateString('ru-RU')}</td>
+                <td>
+                    <a href="${shortUrl}" target="_blank" class="btn" style="padding: 6px 12px; font-size: 14px;">↗️</a>
+                    <a href="${statsUrl}" class="btn" style="padding: 6px 12px; font-size: 14px; background: #28a745;">📈</a>
+                </td>
+            `;
+        });
+    } catch (err) {
+        console.error('Error loading links:', err);
+        errorEl.textContent = 'Ошибка соединения: ' + err.message;
+        errorEl.style.display = 'block';
+        loadingEl.style.display = 'none';
+    }
+}
+
+loadLinks();
+</script>
+{% endblock %}

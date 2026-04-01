@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Регистрация | Link Shortener{% endblock %}
+
+{% block content %}
+<h1>📝 Регистрация</h1>
+<p style="color: #666; margin-bottom: 20px;">Создайте аккаунт для управления ссылками</p>
+
+<form id="registerForm">
+    <label for="username">Имя пользователя:</label>
+    <input type="text" id="username" placeholder="Придумайте имя" required>
+    
+    <label for="email">Email:</label>
+    <input type="email" id="email" placeholder="example@mail.com" required>
+    
+    <label for="password">Пароль:</label>
+    <input type="password" id="password" placeholder="Мин. 8 символов, цифра, заглавная" required>
+    
+    <button type="submit" class="btn btn-success" style="width: 100%; margin-top: 20px;">Зарегистрироваться</button>
+</form>
+
+<p class="error" id="error" style="display: none;"></p>
+
+<div class="success" id="success" style="display: none;">
+    ✅ Регистрация успешна! Перенаправление...
+</div>
+
+<p style="margin-top: 20px; text-align: center;">
+    Уже есть аккаунт? <a href="/login">Войти</a>
+</p>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('registerForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const username = document.getElementById('username').value;
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    
+    const errorEl = document.getElementById('error');
+    const successEl = document.getElementById('success');
+    
+    try {
+        const response = await fetch('/auth/register', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({username, email, password})
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            localStorage.setItem('access_token', data.access_token);
+            localStorage.setItem('refresh_token', data.refresh_token);
+            successEl.style.display = 'block';
+            errorEl.style.display = 'none';
+            setTimeout(() => {
+                window.location.href = '/shorten';
+            }, 1500);
+        } else {
+            errorEl.textContent = data.detail || 'Ошибка регистрации';
+            errorEl.style.display = 'block';
+            successEl.style.display = 'none';
+        }
+    } catch (err) {
+        errorEl.textContent = 'Ошибка соединения с сервером';
+        errorEl.style.display = 'block';
+    }
+});
+</script>
+{% endblock %}

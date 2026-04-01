@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Сократить ссылку | Link Shortener{% endblock %}
+
+{% block content %}
+<h1>✂️ Сократить ссылку</h1>
+<p style="color: #666; margin-bottom: 20px;">Вставьте длинную ссылку и получите короткую</p>
+
+<form id="shortenForm">
+    <label for="url">Длинная ссылка:</label>
+    <input type="url" id="url" placeholder="https://example.com/very-long-url..." required>
+    
+    <button type="submit" class="btn btn-success" style="width: 100%; margin-top: 20px;">Сократить</button>
+</form>
+
+<p class="error" id="error" style="display: none;"></p>
+
+<div id="result" class="success" style="display: none; margin-top: 20px;">
+    <h3 style="margin-bottom: 15px;">✅ Ссылка создана!</h3>
+    <p><strong>Короткая:</strong></p>
+    <a id="shortLink" href="#" target="_blank" style="font-size: 18px; color: #667eea; word-break: break-all;"></a>
+    <p style="margin-top: 15px;"><strong>Оригинал:</strong></p>
+    <p id="originalUrl" style="color: #666; word-break: break-all;"></p>
+    <p style="margin-top: 15px;"><strong>Кликов:</strong> <span id="clicks">0</span> 👁</p>
+</div>
+
+<p style="margin-top: 30px; text-align: center;">
+    <a href="/my-links">📊 Посмотреть все ссылки</a>
+</p>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Проверка авторизации
+const token = localStorage.getItem('access_token');
+if (!token) {
+    window.location.href = '/login';
+}
+
+document.getElementById('shortenForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const url = document.getElementById('url').value;
+    const token = localStorage.getItem('access_token');
+    
+    const errorEl = document.getElementById('error');
+    const resultEl = document.getElementById('result');
+    
+    try {
+        const response = await fetch('/links/shorten', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({url})
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            resultEl.style.display = 'block';
+            errorEl.style.display = 'none';
+            
+            const shortUrl = window.location.origin + '/links/' + data.short_code;
+            document.getElementById('shortLink').href = shortUrl;
+            document.getElementById('shortLink').textContent = shortUrl;
+            document.getElementById('originalUrl').textContent = data.original_url;
+            document.getElementById('clicks').textContent = data.clicks;
+            
+            document.getElementById('url').value = '';
+        } else {
+            if (response.status === 401) {
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('refresh_token');
+                window.location.href = '/login';
+            } else {
+                errorEl.textContent = data.detail || 'Ошибка создания ссылки';
+                errorEl.style.display = 'block';
+                resultEl.style.display = 'none';
+            }
+        }
+    } catch (err) {
+        errorEl.textContent = 'Ошибка соединения с сервером';
+        errorEl.style.display = 'block';
+        resultEl.style.display = 'none';
+    }
+});
+</script>
+{% endblock %}
